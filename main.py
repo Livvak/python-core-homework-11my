@@ -1,4 +1,6 @@
 from collections import UserDict
+import datetime
+from datetime import date
 
 class Field:
     def __init__(self, value):
@@ -28,13 +30,8 @@ class Phone(Field):
     # реалізація класу
     def __init__(self, phone: str):
         super().__init__(phone)
-
-        # self.phone = ''
-        # self.phone_for_check = phone
         self.phone = self.valid_phone(phone)
 
-        # if self.valid_phone(phone) == None:
-        #     self.phone = ''
 
     def valid_phone(self, phone: str):
         if len(phone) != 10:
@@ -44,6 +41,30 @@ class Phone(Field):
             print("Номер долен состоять только из цифр")
             raise ValueError
         return phone
+
+class Birthday(Field):
+    def __init__(self, birthday):
+        super().__init__(birthday)
+        self.birthday_date = None
+        self.birthday = self.valid_birthday(birthday)
+
+
+    # @valid_birthday.setter
+    def Birthday(self, birthday: str):
+        if not birthday.find('.'):
+            print('Формат дати: DD.MM.YYYY')
+            return
+        date = birthday.split('.')
+        if len(date) != 3:
+            print('Формат дати: DD.MM.YYYY')
+            return
+        try:
+            self.birthday_date = datetime.date(year=date.today().year, month=int(date[1]), day=int(date[0]))
+        except ValueError:
+            print("Введіть коректну дату")
+        return birthday
+
+
 
 class Record:
     def __init__(self, name):
@@ -79,6 +100,13 @@ class Record:
         for item in self.phones:
             if tel.phone == item.phone:
                 return item
+
+    def days_to_birthday(self, birthday) -> int:
+        birth = Birthday(birthday)
+        begin_data = datetime.date.today()
+        days = birth.birthday_date - begin_data
+        if days > 0:
+            return days
 
 
 
