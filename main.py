@@ -1,5 +1,6 @@
 from collections import UserDict
 from datetime import date, datetime
+import pickle
 
 class Field:
     def __init__(self, value):
@@ -189,6 +190,16 @@ class AddressBook(UserDict):
             return self.data[keys[self.current_value-1]]
         raise StopIteration
 
+    # def __getstate__(self):
+    #     attributes = self.__dict__.copy()
+    #     attributes['fh'] = None
+    #     return attributes
+    #
+    # def __setstate__(self, value):
+    #     self.__dict__ = value
+    #     self.fh = open(value['file'])
+    #     self.fh.seek(value['position'])
+
 
 def main():
 
@@ -223,6 +234,15 @@ def main():
     # Пошук конкретного телефону у записі John
     found_phone = john.find_phone("5555555555")
     print(f"{john.name}: {found_phone}")  # Виведення: 5555555555
+
+    # Збереження об'єктів у файл
+    with open("addr_book.bin", "wb") as fh:
+        fh.write(pickle.dumps(book))
+    # Завантаження об'єктів із файлу
+    with open("addr_book.bin", "rb") as fh:
+        book2 = pickle.loads(fh.read())
+
+    book2.delete("Jane")
 
     # Видалення запису Jane
     book.delete("Jane")
