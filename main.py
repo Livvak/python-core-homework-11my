@@ -1,6 +1,5 @@
 from collections import UserDict
-import datetime
-from datetime import date
+from datetime import date, datetime
 
 class Field:
     def __init__(self, value):
@@ -30,9 +29,15 @@ class Phone(Field):
     # реалізація класу
     def __init__(self, phone: str):
         super().__init__(phone)
-        self.phone = self.valid_phone(phone)
+        # self.phone = self.valid_phone(phone)
+        self._phone = phone
 
 
+    @property
+    def phone(self):
+        return self._phone
+
+    @phone.setter
     def valid_phone(self, phone: str):
         if len(phone) != 10:
             print("Номер не 10 знаков")
@@ -40,42 +45,52 @@ class Phone(Field):
         if not phone.isdigit():
             print("Номер долен состоять только из цифр")
             raise ValueError
-        return phone
+        self._phone = phone
 
 class Birthday(Field):
     def __init__(self, birthday):
         super().__init__(birthday)
         self.birthday_date = None
-        self.birthday = self.valid_birthday(birthday)
+        self._birthday = birthday
 
+    @property
+    def birthday(self):
+        return self._birthday
 
-    # @valid_birthday.setter
-    def Birthday(self, birthday: str):
-        if not birthday.find('.'):
+    @birthday.setter
+    def birthday(self, day: str):
+        print("find")
+        if not day.find('.'):
+            print("find")
             print('Формат дати: DD.MM.YYYY')
-            return
-        date = birthday.split('.')
-        if len(date) != 3:
+            raise ValueError
+        date_b = day.split('.')
+        if len(date_b) != 3:
             print('Формат дати: DD.MM.YYYY')
-            return
+            raise ValueError
         try:
-            self.birthday_date = datetime.date(year=date.today().year, month=int(date[1]), day=int(date[0]))
+            self.birthday_date = date(year=int(date_b[2]), month=int(date_b[1]), day=int(date_b[0]))
+            print(day)
         except ValueError:
             print("Введіть коректну дату")
-        return birthday
-
+        else: self._birthday = day
 
 
 class Record:
     def __init__(self, name):
         self.name = Name(name)
         self.phones = []
+        self.birthday = None
 
 
     def add_phone(self, phone):
         tel = Phone(phone)
-        if tel.valid_phone(phone):
-            self.phones.append(tel)
+        # if tel.valid_phone(phone):
+        self.phones.append(tel)
+
+    def add_birthday(self, birthday):
+        day = Birthday(birthday)
+        self.birthday = day
 
     def remove_phone(self, phone):
         tel = Phone(phone)
@@ -101,21 +116,52 @@ class Record:
             if tel.phone == item.phone:
                 return item
 
-    def days_to_birthday(self, birthday) -> int:
-        birth = Birthday(birthday)
-        begin_data = datetime.date.today()
-        days = birth.birthday_date - begin_data
-        if days > 0:
-            return days
 
+    def days_to_birthday(self, date_b: str):
+        Date = Birthday(date_b)
+
+        def is_leap_year(year):
+            return True if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0) else False
+
+        birthday = Date.birthday_date
+        today = date.today()
+        year = datetime.now().year
+        next_birthday = birthday.replace(year=today.year + 1)
+        # print(f"Сегодня: {today}   ДР: {birthday}  Следующий ДР: {next_birthday} {year}")
+        count_day = (next_birthday - today).days
+        if count_day > 366 and is_leap_year(year + 1):
+            count_day = count_day - 366
+        if count_day > 365 and not is_leap_year(year + 1):
+            count_day = count_day - 365
+
+        return count_day
+
+    def verify_birthday(self, birthday: str):
+        Date_b = Birthday(birthday)
+        if Date_b.birthday_date == None:
+            print("Дата не валідна")
+            raise ValueError
+        print("Дата валідна")
+
+    def verify_phone(self, phone: str):
+        Phone_v = Phone(phone)
+        if Phone_v.phone == None:
+            print("Номер не валідний")
+            raise ValueError
+        print("Номер валідний")
 
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        if self.birthday:
+            return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, Birthday: {self.birthday}"
+        else:
+            return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+
 
 class AddressBook(UserDict):
     def __init__(self):
         self.data = dict()
+        self.current_value = 0
 
     def add_record(self, obj):
         self.data[str(obj.name)] = obj
@@ -135,6 +181,15 @@ class AddressBook(UserDict):
         else:
             print(f'{name} не знайдено')
 
+    def __next__(self):
+        max_value = len(self.data)
+        keys = list(self.data.keys())
+        if self.current_value < max_value:
+            self.current_value += 1
+            return self.data[keys[self.current_value-1]]
+        raise StopIteration
+
+
 def main():
 
     # Створення нової адресної книги
@@ -142,6 +197,7 @@ def main():
 
     # Створення запису для John
     john_record = Record("John")
+    john_record.add_birthday("21.07.2000")
     john_record.add_phone("1234567890")
     john_record.add_phone("5555555555")
 
@@ -151,6 +207,7 @@ def main():
     # Створення та додавання нового запису для Jane
     jane_record = Record("Jane")
     jane_record.add_phone("9876543210")
+    jane_record.add_birthday("331-13-2000")
     book.add_record(jane_record)
 
     # Виведення всіх записів у книзі
