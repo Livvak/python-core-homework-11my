@@ -4,77 +4,61 @@ import pickle
 
 class Field:
     def __init__(self, value):
+        self._value = None
         self.value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
 
     def __str__(self):
         return str(self.value)
 
 class Name(Field):
-    def __init__(self, name):
-        super().__init__(name)
-        if self.valid_name(name) == None:
-            self.name = ''
-        else:
-            self.name = name
 
-    def valid_name(self, name: str):
-        if len(name) < 3:
-            print("Имя не менее 3 знаков")
-            return
-        if not name.isalpha():
-            print("Имя должно состоять только из букв")
-            return
-        return name
+    @Field.value.setter
+    def value(self, value: str):
+        if len(value) < 3:
+            # print("Имя не менее 3 знаков")
+            raise ValueError("Имя не менее 3 знаков")
+
+        if not value.isalpha():
+            # print("Имя должно состоять только из букв")
+            raise TypeError("Имя должно состоять только из букв")
+
+        self._value = value
 
 class Phone(Field):
-    # реалізація класу
-    def __init__(self, phone: str):
-        super().__init__(phone)
-        # self.phone = self.valid_phone(phone)
-        self._phone = phone
 
-
-    @property
-    def phone(self):
-        return self._phone
-
-    @phone.setter
-    def valid_phone(self, phone: str):
-        if len(phone) != 10:
-            print("Номер не 10 знаков")
-            raise ValueError
-        if not phone.isdigit():
-            print("Номер долен состоять только из цифр")
-            raise ValueError
-        self._phone = phone
+    @Field.value.setter
+    # def valid_phone(self, phone: str):
+    def value(self, value: str):
+        if len(value) != 10:
+            # print("Номер не 10 знаков")
+            raise ValueError("Номер не 10 знаков")
+        if not value.isdigit():
+            # print("Номер долен состоять только из цифр")
+            raise TypeError("Номер долен состоять только из цифр")
+        self._value = value
 
 class Birthday(Field):
-    def __init__(self, birthday):
-        super().__init__(birthday)
-        self.birthday_date = None
-        self._birthday = birthday
 
-    @property
-    def birthday(self):
-        return self._birthday
-
-    @birthday.setter
-    def birthday(self, day: str):
-        print("find")
-        if not day.find('.'):
-            print("find")
-            print('Формат дати: DD.MM.YYYY')
-            raise ValueError
-        date_b = day.split('.')
+    @Field.value.setter
+    def value(self, value: str):
+        if not value.find('.'):
+            raise ValueError('Формат дати: DD.MM.YYYY')
+        date_b = value.split('.')
         if len(date_b) != 3:
-            print('Формат дати: DD.MM.YYYY')
-            raise ValueError
+            raise ValueError('Формат дати: DD.MM.YYYY')
         try:
-            self.birthday_date = date(year=int(date_b[2]), month=int(date_b[1]), day=int(date_b[0]))
-            print(day)
+            birthday_date = date(year=int(date_b[2]), month=int(date_b[1]), day=int(date_b[0]))
         except ValueError:
-            print("Введіть коректну дату")
-        else: self._birthday = day
+            raise ValueError("Введіть коректну дату")
+        else: self._value = value
 
 
 class Record:
@@ -96,13 +80,13 @@ class Record:
     def remove_phone(self, phone):
         tel = Phone(phone)
         for item in self.phones:
-            if tel.phone == item.phone:
+            if tel.value == item.phone:
                 self.phones.remove(item)
 
     def edit_phone(self, phone_old, phone_new):
         tel_new = Phone(phone_new)
         for item in self.phones:
-            if phone_old == item.phone:
+            if phone_old == item.value:
                 idx = self.phones.index(item)
                 self.phones.remove(item)
                 self.phones.insert(idx, tel_new)
@@ -114,17 +98,20 @@ class Record:
     def find_phone(self, phone):
         tel = Phone(phone)
         for item in self.phones:
-            if tel.phone == item.phone:
+            if tel.value == item.value:
                 return item
 
 
-    def days_to_birthday(self, date_b: str):
-        Date = Birthday(date_b)
+    def days_to_birthday(self):
+        if not self.birthday:
+            raise ValueError("Дата народження не задана")
 
         def is_leap_year(year):
             return True if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0) else False
 
-        birthday = Date.birthday_date
+        date_b = self.birthday.value.split('.')
+        birthday_date = date(year=int(date_b[2]), month=int(date_b[1]), day=int(date_b[0]))
+        birthday = birthday_date
         today = date.today()
         year = datetime.now().year
         next_birthday = birthday.replace(year=today.year + 1)
@@ -136,20 +123,6 @@ class Record:
             count_day = count_day - 365
 
         return count_day
-
-    def verify_birthday(self, birthday: str):
-        Date_b = Birthday(birthday)
-        if Date_b.birthday_date == None:
-            print("Дата не валідна")
-            raise ValueError
-        print("Дата валідна")
-
-    def verify_phone(self, phone: str):
-        Phone_v = Phone(phone)
-        if Phone_v.phone == None:
-            print("Номер не валідний")
-            raise ValueError
-        print("Номер валідний")
 
 
     def __str__(self):
@@ -171,7 +144,7 @@ class AddressBook(UserDict):
     def find(self, name):
         _name = Name(name)
         for key, val in self.data.items():
-            if _name.name == key:
+            if _name.value == key:
                 result = val
                 return result
 
@@ -190,15 +163,15 @@ class AddressBook(UserDict):
             return self.data[keys[self.current_value-1]]
         raise StopIteration
 
-    # def __getstate__(self):
-    #     attributes = self.__dict__.copy()
-    #     attributes['fh'] = None
-    #     return attributes
-    #
-    # def __setstate__(self, value):
-    #     self.__dict__ = value
-    #     self.fh = open(value['file'])
-    #     self.fh.seek(value['position'])
+    def save_to_file(self):
+        with open("addr_book.bin", "wb") as fh:
+            fh.write(pickle.dumps(self))
+
+    def load_from_file(self):
+        with open("addr_book.bin", "rb") as fh:
+            return pickle.loads(fh.read())
+
+
 
 
 def main():
@@ -218,7 +191,7 @@ def main():
     # Створення та додавання нового запису для Jane
     jane_record = Record("Jane")
     jane_record.add_phone("9876543210")
-    jane_record.add_birthday("331-13-2000")
+    jane_record.add_birthday("31.12.2000")
     book.add_record(jane_record)
 
     # Виведення всіх записів у книзі
@@ -236,13 +209,13 @@ def main():
     print(f"{john.name}: {found_phone}")  # Виведення: 5555555555
 
     # Збереження об'єктів у файл
-    with open("addr_book.bin", "wb") as fh:
-        fh.write(pickle.dumps(book))
-    # Завантаження об'єктів із файлу
-    with open("addr_book.bin", "rb") as fh:
-        book2 = pickle.loads(fh.read())
+    book.save_to_file()
 
-    book2.delete("Jane")
+    # Завантаження об'єктів із файлу в новий об'єкт
+    book_recovered = book.load_from_file()
+
+
+    book_recovered.delete("Jane")
 
     # Видалення запису Jane
     book.delete("Jane")
@@ -250,26 +223,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # book = AddressBook()
-    # ph = Phone('1234567800')
-    # print(ph.phone)
-    #
-    # bb = 'ddkh'
-    # imm = Name(bb)
-    # print(imm.name)
-    #
-    # john_record = Record("John")
-    # john_record.add_phone("1234567890")
-    # john_record.add_phone("5555555555")
-    # print(john_record.name)
-    # print(john_record.phones)
-    # book.add_record(john_record)
-    # print("="*30)
-    # john = book.find("John")
-    # print(john)
-    #
-    # book.delete("вв")
-    #
-    # # ddk = Record(imm.name)
-    # # ddk.add_phone(ph.phone)
-    # # print(ddk.phones)
